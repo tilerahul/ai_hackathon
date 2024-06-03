@@ -7,7 +7,7 @@ genre = st.radio(
     "Select Type Of Employeement",
     ["Permanent", "Contract Base"],)
 
-age=st.text_input("Enter Your Age:")
+age=st.text_input("Enter Your Age : ")
 salary=st.text_input("Enter Your Salary:")
 genre = st.radio(
     "Select Your Gender",

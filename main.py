@@ -1,71 +1,91 @@
-from cProfile import label
+import pandas as pd
+import babel.numbers
+import plotly.graph_objects as go
+# from cProfile import label
+
+# import pandas as pd
+# import numpy as np
+# from sklearn.model_selection import train_test_split
+# from sklearn.ensemble import RandomForestRegressor
 
 import streamlit as st
-import geonamescache
-import datetime
-st.title('Welcome to the Investment')
-name=st.text_input("Enter Your name:")
-st.write("Hii ", name)
-email=st.text_input("E-Mail:")
-mob=st.text_input("Mobile NO")
-d = st.date_input("Select Date of Birth", datetime.date(2019, 7, 6))
-st.write("Your birthday is:", d)
+import numpy as np
+st.title("Welcome to AI Based Allocation Engine" )
+salary=st.text_input("Enter Your Name:")
+genre = st.radio(
+    "Select Type Of Employeement",
+    ["Permanent", "Contract Base"],)
+
+age=st.text_input("Enter Your Age:")
+salary=st.text_input("Enter Your Salary:")
 genre = st.radio(
     "Select Your Gender",
     ["Male", "Female","Others"],)
-marr=st.radio(
-    "Select Marrital Status",
-    ["Married","Unmarried"],
-)
+st.write('<style>div.row-widget.stRadio> div{flex-direction:row;}</style>',unsafe_allow_html=True)
+amout=st.text_input("Enter the Amount You want to invest:")
 
-label("Select Following")
-states_dict = dict()
-cs = ["Select a city"]
-
-col1, col2, col3 = st.columns(3)
-
-with col2:
-    gc = geonamescache.GeonamesCache()
-    city = gc.get_cities()
-    states = gc.get_us_states()
-
-    if "disabled" not in st.session_state:
-        st.session_state.disabled = True
+sip_amount= st.slider("What Percentage of salary Do you Want to Invest", min_value = 10, max_value = 100)
 
 
-    def callback():
-        st.session_state.disabled = False
+duration= st.slider("Select The Investment Period", min_value = 10, max_value = 100)
+rate_of_return = st.slider('Expected Rate of Return (in %)',1,30,12)
 
+option = st.selectbox(
+    "Risk Tolerance:",
+    ("High", "Medium", "Low"))
 
-    # ---STATES---
+st.write("You selected:", option)
+checkbox = st.checkbox('', False)
 
-    for state, code in states.items():
-        states_dict[code['name']] = state
+# if inflation checkbox if off
+if checkbox == False:
 
-    option_s = st.selectbox("Select a State", states_dict.items())
+    monthly_rate = rate_of_return / 12 / 100
+    months = duration * 12
 
-    if option_s == "Select a State":
-        st.write("#")
-    else:
-        st.write("You selected:", option_s)
+    invested_value = sip_amount * months
+    invested_value_inwords = babel.numbers.format_currency(invested_value, 'INR', locale='en_IN')
 
-    # ---CITIES---
+    future_value = sip_amount * ((((1 + monthly_rate) ** (months)) - 1) * (1 + monthly_rate)) / monthly_rate
+    future_value_inwords = babel.numbers.format_currency(future_value, 'INR', locale='en_IN')
 
-    for city in city.values():
-        if city['countrycode'] == 'US':
-            if city['admin1code'] == option_s[1]:
-                cs.append(city['name'])
+    gain = round(float(future_value) - float(invested_value), 2)
+    gain_inwords = babel.numbers.format_currency(gain, 'INR', locale='en_IN')
 
-    option_c = st.selectbox("Select a city", cs, disabled=st.session_state.disabled, on_change=callback())
+    st.subheader(f'Amount Invested: {invested_value_inwords}')
+    st.subheader(f'Final Amount: {future_value_inwords}')
+    st.subheader(f'Gain: {gain_inwords}')
 
-    if option_c == "Select a city":
-        st.write("#")
-    else:
-        st.write("You selected:", option_c)
+    # plot pie chart
+    fig = go.Figure(data=[go.Pie(labels=['Investment', 'Gain'], values=[invested_value, gain])])
+    fig.update_traces(hoverinfo='value', textinfo='label+value', textfont_size=15,
+                      marker=dict(colors=['green', 'red'], line=dict(color='#000000', width=2)))
+    st.plotly_chart(fig)
 
-st.text("These Terms & Conditions (the “Terms”) apply to and regulate the provisions of investments products including mutual funds, collective.")
-agree = st.checkbox("I agree")
+elif checkbox == True:
 
-st.link_button("Submit",url="detail.py")
-if agree:
-    st.write("Great!")
+    try:
+        monthly_rate = (rate_of_return - 6) / 12 / 100
+        months = duration * 12
+
+        invested_value = sip_amount * months
+        invested_value_inwords = babel.numbers.format_currency(sip_amount * months, 'INR', locale='en_IN')
+
+        future_value = sip_amount * ((((1 + monthly_rate) ** (months)) - 1) * (1 + monthly_rate)) / monthly_rate
+        future_value_inwords = babel.numbers.format_currency(future_value, 'INR', locale='en_IN')
+
+        gain_after_inflation = round(float(future_value) - float(invested_value), 2)
+        gain_after_inflation_inwords = babel.numbers.format_currency(gain_after_inflation, 'INR', locale='en_IN')
+
+        st.subheader(f'Amount Invested: {invested_value_inwords}')
+        st.subheader(f'Final Amount: {future_value_inwords}')
+        st.subheader(f'Gain: {gain_after_inflation_inwords}')
+
+        fig = go.Figure(data=[go.Pie(labels=['Investment', 'Gain'], values=[invested_value, gain_after_inflation])])
+        fig.update_traces(hoverinfo='value', textinfo='label+value', textfont_size=15,
+                          marker=dict(colors=['green', 'red'], line=dict(color='#000000', width=2)))
+        st.plotly_chart(fig)
+    except Exception as e:
+        st.warning('Please change the expcted rate of return')
+st.button("Invest Now")
+
