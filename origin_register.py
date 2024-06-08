@@ -131,8 +131,4 @@ if submit:
     # plot pie chart
     fig = go.Figure(data=[go.Pie(labels=stock_name, values=sel_optimal_weights)])
     fig.update_traces(hoverinfo='value', textinfo='label+value', textfont_size=15)
-    st.plotly_chart(fig)
-
-
-
- 
+    st.plotly_chart(fig) 
